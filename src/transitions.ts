@@ -43,10 +43,13 @@ export interface TransitionController {
 }
 
 export interface TransitionUI {
-  statusEl: HTMLElement;
-  loaderEl: HTMLElement;
-  badgeEl: HTMLElement;
-  toggleBtn: HTMLButtonElement;
+  statusEl:      HTMLElement;
+  loaderEl:      HTMLElement;
+  badgeEl:       HTMLElement;
+  toggleBtn:     HTMLButtonElement;
+  svgOverlay:    SVGSVGElement;
+  drawToolbar:   HTMLElement;
+  toolbar3d:     HTMLElement;
 }
 
 /**
@@ -75,6 +78,10 @@ export function createTransitionController(
     fadeMaterial(mat, 1.0, 900);
     map.triggerRepaint();
 
+    ui.svgOverlay.style.display  = 'none';
+    ui.drawToolbar.style.display = 'none';
+    ui.toolbar3d.style.display   = 'flex';
+
     ui.loaderEl.classList.remove('visible');
     ui.toggleBtn.textContent  = '← Back to 2D';
     ui.statusEl.textContent   = '3D — LiDAR Point Cloud';
@@ -97,6 +104,10 @@ export function createTransitionController(
     await flyTo(map, { pitch: 0, bearing: 0, zoom: INIT_ZOOM, duration: 1200 });
 
     setSiteOpacity(map, 0.08, 0.85);
+
+    ui.svgOverlay.style.display  = '';
+    ui.drawToolbar.style.display = '';
+    ui.toolbar3d.style.display   = 'none';
 
     ui.toggleBtn.textContent  = 'View in 3D →';
     ui.statusEl.textContent   = '2D — Satellite + Site Plan';

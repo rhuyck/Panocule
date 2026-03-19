@@ -29,17 +29,60 @@
     <div id="loader-text">Loading point cloud…</div>
   </div>
 
-  <!-- SVG drawing overlay (sits above map, pointer-events managed by drawing module) -->
+  <!-- SVG drawing overlay -->
   <svg id="draw-overlay" xmlns="http://www.w3.org/2000/svg"></svg>
 
-  <!-- Drawing toolbar -->
+  <!-- 2D Drawing toolbar -->
   <div id="draw-toolbar">
-    <button class="tool-btn active" data-tool="none"   title="Pan / Select">✦</button>
-    <button class="tool-btn"        data-tool="pen"    title="Pen">✏</button>
-    <button class="tool-btn"        data-tool="rect"   title="Rectangle">▭</button>
-    <button class="tool-btn"        data-tool="circle" title="Circle">◯</button>
+    <button class="tool-btn active" data-tool="none"        title="Pan">✦</button>
+    <button class="tool-btn"        data-tool="select"      title="Select">↖</button>
+    <button class="tool-btn"        data-tool="multiselect" title="Multi-select">⬚</button>
     <hr />
-    <button class="tool-btn danger" id="clear-btn"     title="Clear all">⌫</button>
+    <button class="tool-btn"        data-tool="rect"        title="Rectangle">▭</button>
+    <button class="tool-btn"        data-tool="ellipse"     title="Ellipse">◯</button>
+    <button class="tool-btn"        data-tool="line"        title="Line">╱</button>
+    <!-- Line sub-tool strip (shown when line tool is active) -->
+    <div id="line-subtool">
+      <button class="tool-btn active" data-subtool="basic"  title="Basic line">—</button>
+      <button class="tool-btn"        data-subtool="dashed" title="Dashed line">╌</button>
+      <button class="tool-btn"        data-subtool="leader" title="Leader arrow">→</button>
+    </div>
+    <button class="tool-btn"        data-tool="pen"         title="Pen / polygon">✏</button>
+    <hr />
+    <button class="tool-btn"        data-tool="vertex"      title="Edit vertices">⬡</button>
+    <button class="tool-btn"        id="shift-btn"          title="Shift — constrain">⇧</button>
+    <hr />
+    <button class="tool-btn danger" id="delete-btn"         title="Delete selected">⌦</button>
+    <button class="tool-btn danger" id="clear-btn"          title="Clear all">⌫</button>
+  </div>
+
+  <!-- 3D Camera toolbar (hidden until 3D mode) -->
+  <div id="toolbar-3d">
+    <button class="tool-btn active" title="Pan">✦</button>
+    <hr />
+    <span class="toolbar-label" id="bearing-display">N</span>
+    <button class="tool-btn" id="bear-ccw"   title="Rotate CCW 22.5°">◁</button>
+    <button class="tool-btn" id="bear-cw"    title="Rotate CW 22.5°">▷</button>
+    <hr />
+    <span class="toolbar-label" id="pitch-display">65°</span>
+    <button class="tool-btn" id="pitch-up"   title="Steepen tilt">△</button>
+    <button class="tool-btn" id="pitch-down" title="Flatten tilt">▽</button>
+    <hr />
+    <button class="tool-btn" id="north-up"   title="Reset to North">⊕</button>
+  </div>
+
+  <!-- Drawing properties panel -->
+  <div id="draw-props">
+    <label class="prop-row">
+      <span>Stroke</span>
+      <input type="color" id="prop-stroke" value="#ff6b6b" />
+      <input type="range" id="prop-width" min="1" max="20" step="0.5" value="2" />
+    </label>
+    <label class="prop-row">
+      <span>Fill</span>
+      <input type="color" id="prop-fill" value="#ff6b6b" />
+      <input type="range" id="prop-fill-opacity" min="0" max="1" step="0.05" value="0.12" />
+    </label>
   </div>
 
   <script type="module" src="/src/main.ts"></script>

@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build output (commit docs/ only if deploying via GitHub Pages)
+dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Vite cache
+.vite/
