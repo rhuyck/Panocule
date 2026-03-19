@@ -1,8 +1,9 @@
 # Dependencies
 node_modules/
 
-# Build output (commit docs/ only if deploying via GitHub Pages)
+# Build output
 dist/
+docs/
 
 # Environment variables
 .env
