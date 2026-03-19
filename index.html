@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Potree × Maplibre — 2D/3D PoC</title>
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <div id="map"></div>
+
+  <div id="ui-top">
+    <div id="title">Potree × Maplibre</div>
+    <div id="status">2D — Satellite + Site Plan</div>
+    <button id="toggle-btn">View in 3D →</button>
+  </div>
+
+  <div id="legend">
+    <div class="row"><div class="swatch-line" style="background:#ffdd00"></div> Site boundary</div>
+    <div class="row"><div class="swatch-box"  style="background:rgba(34,238,136,0.6)"></div> Building footprints</div>
+    <div class="row"><div class="swatch-dot"  style="background:#00d4ff"></div> LiDAR point cloud</div>
+    <div class="row"><div class="swatch-dot"  style="background:#ff6b6b"></div> Drawing overlay</div>
+  </div>
+
+  <div id="mode-badge" class="mode-2d">2D</div>
+
+  <div id="loader">
+    <div class="spinner"></div>
+    <div id="loader-text">Loading point cloud…</div>
+  </div>
+
+  <!-- SVG drawing overlay (sits above map, pointer-events managed by drawing module) -->
+  <svg id="draw-overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+
+  <!-- Drawing toolbar -->
+  <div id="draw-toolbar">
+    <button class="tool-btn active" data-tool="none"   title="Pan / Select">✦</button>
+    <button class="tool-btn"        data-tool="pen"    title="Pen">✏</button>
+    <button class="tool-btn"        data-tool="rect"   title="Rectangle">▭</button>
+    <button class="tool-btn"        data-tool="circle" title="Circle">◯</button>
+    <hr />
+    <button class="tool-btn danger" id="clear-btn"     title="Clear all">⌫</button>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
