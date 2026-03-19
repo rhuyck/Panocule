@@ -85,12 +85,13 @@ export function createDrawingController(svg: SVGSVGElement, map: Map): DrawingCo
 
     if (!dfs(newLine.end)) return;
 
-    // Build polygon vertices by walking the path in order
-    const pts: GeoPoint[] = [];
+    // Build polygon vertices and control points by walking the path in order
+    const pts:     GeoPoint[]              = [];
+    const ctrlPts: (GeoPoint | null)[]     = [];
     let cur: GeoPoint = newLine.start;
     for (const l of path) {
-      if (eq(cur, l.start)) { pts.push(l.start); cur = l.end; }
-      else                   { pts.push(l.end);   cur = l.start; }
+      if (eq(cur, l.start)) { pts.push(l.start); ctrlPts.push(l.controlPt ?? null); cur = l.end; }
+      else                   { pts.push(l.end);   ctrlPts.push(l.controlPt ?? null); cur = l.start; }
     }
 
     // Remove all lines in the loop and replace with a closed polygon
@@ -98,9 +99,11 @@ export function createDrawingController(svg: SVGSVGElement, map: Map): DrawingCo
     for (let i = shapes.length - 1; i >= 0; i--) {
       if (loopIds.has(shapes[i].id)) shapes.splice(i, 1);
     }
+    const hasCtrl = ctrlPts.some(cp => cp != null);
     const polygon: PenShape = {
       id: crypto.randomUUID(),
       type: 'pen', points: pts, style: newLine.style, closed: true,
+      ...(hasCtrl ? { controlPts: ctrlPts } : {}),
     };
     shapes.push(polygon);
   }

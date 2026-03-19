@@ -29,6 +29,11 @@ export function getShapeBBox(map: Map, shape: GeoShape): BBox | null {
   switch (shape.type) {
     case 'pen':
       pts = shape.points.map(g => pxFromGeo(map, g));
+      if (shape.controlPts) {
+        for (const cp of shape.controlPts) {
+          if (cp) pts.push(pxFromGeo(map, cp));
+        }
+      }
       break;
     case 'rect':
       pts = shape.corners.map(g => pxFromGeo(map, g));
@@ -47,6 +52,7 @@ export function getShapeBBox(map: Map, shape: GeoShape): BBox | null {
     }
     case 'line':
       pts = [pxFromGeo(map, shape.start), pxFromGeo(map, shape.end)];
+      if (shape.controlPt) pts.push(pxFromGeo(map, shape.controlPt));
       break;
   }
 
@@ -103,32 +109,62 @@ export function renderShape(
   switch (shape.type) {
     case 'pen': {
       if (shape.points.length < 2) return;
-      const ptsStr = shape.points
-        .map(g => { const p = pxFromGeo(map, g); return `${p.x},${p.y}`; })
-        .join(' ');
-      if (shape.closed && shape.points.length >= 3) {
-        // Render as a filled polygon
-        const el = document.createElementNS(NS, 'polygon') as SVGPolygonElement;
-        el.setAttribute('points',          ptsStr);
-        el.setAttribute('stroke',          s.strokeColor);
-        el.setAttribute('stroke-width',    String(s.strokeWidth));
-        el.setAttribute('stroke-linejoin', 'round');
-        el.setAttribute('fill',            s.fillColor);
-        el.setAttribute('fill-opacity',    String(s.fillOpacity));
-        if (s.strokeDash) el.setAttribute('stroke-dasharray', s.strokeDash);
-        el.dataset['shapeId'] = shape.id;
-        svg.appendChild(el);
-      } else {
-        const el = document.createElementNS(NS, 'polyline') as SVGPolylineElement;
-        el.setAttribute('points',          ptsStr);
+      const hasCtrl = shape.controlPts?.some(cp => cp != null) ?? false;
+      if (hasCtrl) {
+        const n = shape.points.length;
+        const pxs = shape.points.map(g => pxFromGeo(map, g));
+        const isClosed = shape.closed && n >= 3;
+        const edgeCount = isClosed ? n : n - 1;
+        let d = `M ${pxs[0].x},${pxs[0].y}`;
+        for (let i = 0; i < edgeCount; i++) {
+          const p1   = pxs[(i + 1) % n];
+          const ctrl = shape.controlPts?.[i];
+          if (ctrl) {
+            const cp = pxFromGeo(map, ctrl);
+            d += ` Q ${cp.x},${cp.y} ${p1.x},${p1.y}`;
+          } else {
+            d += ` L ${p1.x},${p1.y}`;
+          }
+        }
+        if (isClosed) d += ' Z';
+        const el = document.createElementNS(NS, 'path') as SVGPathElement;
+        el.setAttribute('d',               d);
         el.setAttribute('stroke',          s.strokeColor);
         el.setAttribute('stroke-width',    String(s.strokeWidth));
         el.setAttribute('stroke-linejoin', 'round');
         el.setAttribute('stroke-linecap',  'round');
-        el.setAttribute('fill',            'none');
+        el.setAttribute('fill',            isClosed ? s.fillColor : 'none');
+        if (isClosed) el.setAttribute('fill-opacity', String(s.fillOpacity));
         if (s.strokeDash) el.setAttribute('stroke-dasharray', s.strokeDash);
         el.dataset['shapeId'] = shape.id;
         svg.appendChild(el);
+      } else {
+        const ptsStr = shape.points
+          .map(g => { const p = pxFromGeo(map, g); return `${p.x},${p.y}`; })
+          .join(' ');
+        if (shape.closed && shape.points.length >= 3) {
+          const el = document.createElementNS(NS, 'polygon') as SVGPolygonElement;
+          el.setAttribute('points',          ptsStr);
+          el.setAttribute('stroke',          s.strokeColor);
+          el.setAttribute('stroke-width',    String(s.strokeWidth));
+          el.setAttribute('stroke-linejoin', 'round');
+          el.setAttribute('fill',            s.fillColor);
+          el.setAttribute('fill-opacity',    String(s.fillOpacity));
+          if (s.strokeDash) el.setAttribute('stroke-dasharray', s.strokeDash);
+          el.dataset['shapeId'] = shape.id;
+          svg.appendChild(el);
+        } else {
+          const el = document.createElementNS(NS, 'polyline') as SVGPolylineElement;
+          el.setAttribute('points',          ptsStr);
+          el.setAttribute('stroke',          s.strokeColor);
+          el.setAttribute('stroke-width',    String(s.strokeWidth));
+          el.setAttribute('stroke-linejoin', 'round');
+          el.setAttribute('stroke-linecap',  'round');
+          el.setAttribute('fill',            'none');
+          if (s.strokeDash) el.setAttribute('stroke-dasharray', s.strokeDash);
+          el.dataset['shapeId'] = shape.id;
+          svg.appendChild(el);
+        }
       }
       break;
     }
@@ -179,24 +215,33 @@ export function renderShape(
     }
 
     case 'line': {
-      const sp = pxFromGeo(map, shape.start);
-      const ep = pxFromGeo(map, shape.end);
-      const el = document.createElementNS(NS, 'line') as SVGLineElement;
-      el.setAttribute('x1',           String(sp.x));
-      el.setAttribute('y1',           String(sp.y));
-      el.setAttribute('x2',           String(ep.x));
-      el.setAttribute('y2',           String(ep.y));
-      el.setAttribute('stroke-linecap', 'round');
+      const sp  = pxFromGeo(map, shape.start);
+      const ep  = pxFromGeo(map, shape.end);
+      let el: SVGElement;
+      if (shape.controlPt) {
+        const cp   = pxFromGeo(map, shape.controlPt);
+        const path = document.createElementNS(NS, 'path') as SVGPathElement;
+        path.setAttribute('d',              `M ${sp.x},${sp.y} Q ${cp.x},${cp.y} ${ep.x},${ep.y}`);
+        path.setAttribute('fill',           'none');
+        path.setAttribute('stroke-linecap', 'round');
+        el = path;
+      } else {
+        const line = document.createElementNS(NS, 'line') as SVGLineElement;
+        line.setAttribute('x1',             String(sp.x));
+        line.setAttribute('y1',             String(sp.y));
+        line.setAttribute('x2',             String(ep.x));
+        line.setAttribute('y2',             String(ep.y));
+        line.setAttribute('stroke-linecap', 'round');
+        el = line;
+      }
       if (shape.subtype === 'leader') {
-        el.setAttribute('stroke',          '#e63946');
-        el.setAttribute('stroke-width',    '2');
-        el.setAttribute('fill',            'none');
-        el.setAttribute('marker-start',    'url(#marker-dot)');
-        el.setAttribute('marker-end',      'url(#marker-arrow)');
+        el.setAttribute('stroke',       '#e63946');
+        el.setAttribute('stroke-width', '2');
+        el.setAttribute('marker-start', 'url(#marker-dot)');
+        el.setAttribute('marker-end',   'url(#marker-arrow)');
       } else {
         el.setAttribute('stroke',       s.strokeColor);
         el.setAttribute('stroke-width', String(s.strokeWidth));
-        el.setAttribute('fill',         'none');
         if (shape.subtype === 'dashed') {
           el.setAttribute('stroke-dasharray', '8 4');
         } else if (s.strokeDash) {

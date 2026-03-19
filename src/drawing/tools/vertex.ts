@@ -2,12 +2,13 @@ import type { Map } from 'maplibre-gl';
 import type { GeoShape, GeoPoint, PenShape } from '../types';
 import { NS, pxFromEvent, pxFromGeo, geoFromPx } from '../render';
 
-type VMode = 'idle' | 'dragging';
+type VMode = 'idle' | 'dragging' | 'dragging-ctrl';
 
 interface VState {
-  mode:     VMode;
-  shapeId:  string | null;
-  pointIdx: number;
+  mode:        VMode;
+  shapeId:     string | null;
+  pointIdx:    number;
+  ctrlEdgeIdx: number;
 }
 
 function getShapePoints(shape: GeoShape): GeoPoint[] {
@@ -28,6 +29,21 @@ function setShapePoints(shape: GeoShape, pts: GeoPoint[]): void {
   }
 }
 
+function getCtrlPt(shape: GeoShape, edgeIdx: number): GeoPoint | null {
+  if (shape.type === 'line' && edgeIdx === 0) return shape.controlPt ?? null;
+  if (shape.type === 'pen') return shape.controlPts?.[edgeIdx] ?? null;
+  return null;
+}
+
+function setCtrlPt(shape: GeoShape, edgeIdx: number, pt: GeoPoint | null): void {
+  if (shape.type === 'line' && edgeIdx === 0) {
+    shape.controlPt = pt ?? undefined;
+  } else if (shape.type === 'pen') {
+    if (!shape.controlPts) shape.controlPts = [];
+    shape.controlPts[edgeIdx] = pt;
+  }
+}
+
 export function createVertexTool(
   svg: SVGSVGElement,
   map: Map,
@@ -36,7 +52,7 @@ export function createVertexTool(
   onRedraw: () => void,
   onSave:   () => void,
 ) {
-  const st: VState = { mode: 'idle', shapeId: null, pointIdx: -1 };
+  const st: VState = { mode: 'idle', shapeId: null, pointIdx: -1, ctrlEdgeIdx: -1 };
 
   function getHandlesGroup(): SVGGElement {
     return svg.querySelector<SVGGElement>('#vertex-handles')!;
@@ -48,30 +64,49 @@ export function createVertexTool(
     g.innerHTML = '';
     const pts = getShapePoints(shape);
 
-    // Midpoint handles — pen, line, and rect (rect will be converted to polygon on insert)
-    const isClosed = (shape.type === 'pen' && shape.closed) || shape.type === 'rect';
-    const edgeCount = isClosed ? pts.length : pts.length - 1;
-    if (shape.type === 'pen' || shape.type === 'line' || shape.type === 'rect') {
+    const isClosed    = (shape.type === 'pen' && shape.closed) || shape.type === 'rect';
+    const edgeCount   = isClosed ? pts.length : pts.length - 1;
+    const supportsCtrl = shape.type === 'pen' || shape.type === 'line' || shape.type === 'rect';
+
+    if (supportsCtrl) {
       for (let i = 0; i < edgeCount; i++) {
-        const p0 = pxFromGeo(map, pts[i]);
-        const p1 = pxFromGeo(map, pts[(i + 1) % pts.length]);
-        const mid = document.createElementNS(NS, 'circle') as SVGCircleElement;
-        mid.setAttribute('cx',           String((p0.x + p1.x) / 2));
-        mid.setAttribute('cy',           String((p0.y + p1.y) / 2));
-        mid.setAttribute('r',            '5');
-        mid.setAttribute('fill',         'rgba(0,150,255,0.55)');
-        mid.setAttribute('stroke',       '#00aaff');
-        mid.setAttribute('stroke-width', '1.5');
-        mid.setAttribute('cursor',       'crosshair');
-        mid.dataset['midpointAfter'] = String(i);
-        g.appendChild(mid);
+        const existingCtrl = getCtrlPt(shape, i);
+
+        if (existingCtrl) {
+          // Orange handle at the actual control point position — drag to adjust, right-click to remove
+          const cp   = pxFromGeo(map, existingCtrl);
+          const ctrl = document.createElementNS(NS, 'circle') as SVGCircleElement;
+          ctrl.setAttribute('cx',           String(cp.x));
+          ctrl.setAttribute('cy',           String(cp.y));
+          ctrl.setAttribute('r',            '5');
+          ctrl.setAttribute('fill',         'rgba(255,140,0,0.75)');
+          ctrl.setAttribute('stroke',       '#ff8c00');
+          ctrl.setAttribute('stroke-width', '1.5');
+          ctrl.setAttribute('cursor',       'crosshair');
+          ctrl.dataset['ctrlEdge'] = String(i);
+          g.appendChild(ctrl);
+        } else {
+          // Blue handle at geometric midpoint — drag to create an arc
+          const p0  = pxFromGeo(map, pts[i]);
+          const p1  = pxFromGeo(map, pts[(i + 1) % pts.length]);
+          const mid = document.createElementNS(NS, 'circle') as SVGCircleElement;
+          mid.setAttribute('cx',           String((p0.x + p1.x) / 2));
+          mid.setAttribute('cy',           String((p0.y + p1.y) / 2));
+          mid.setAttribute('r',            '5');
+          mid.setAttribute('fill',         'rgba(0,150,255,0.55)');
+          mid.setAttribute('stroke',       '#00aaff');
+          mid.setAttribute('stroke-width', '1.5');
+          mid.setAttribute('cursor',       'crosshair');
+          mid.dataset['midpointAfter'] = String(i);
+          g.appendChild(mid);
+        }
       }
     }
 
-    // Vertex handles (on top of midpoints)
+    // Vertex handles (on top of midpoint/ctrl handles)
     for (let i = 0; i < pts.length; i++) {
       const px = pxFromGeo(map, pts[i]);
-      const c = document.createElementNS(NS, 'circle') as SVGCircleElement;
+      const c  = document.createElementNS(NS, 'circle') as SVGCircleElement;
       c.setAttribute('cx',           String(px.x));
       c.setAttribute('cy',           String(px.y));
       c.setAttribute('r',            '6');
@@ -85,11 +120,9 @@ export function createVertexTool(
   }
 
   function getActiveShape(): GeoShape | undefined {
-    const shapes = getShapes();
+    const shapes   = getShapes();
     const selected = getSelectedIds();
-    if (selected.size > 0) {
-      return shapes.find(s => selected.has(s.id));
-    }
+    if (selected.size > 0) return shapes.find(s => selected.has(s.id));
     return shapes[shapes.length - 1];
   }
 
@@ -103,11 +136,11 @@ export function createVertexTool(
   function deactivate(): void {
     const g = getHandlesGroup();
     if (g) g.innerHTML = '';
-    st.mode    = 'idle';
-    st.shapeId = null;
+    st.mode        = 'idle';
+    st.shapeId     = null;
+    st.ctrlEdgeIdx = -1;
   }
 
-  // Called after every map move / redrawAll so handles stay in sync
   function refreshHandles(): void {
     if (!st.shapeId) return;
     const shape = getShapes().find(s => s.id === st.shapeId);
@@ -116,7 +149,7 @@ export function createVertexTool(
   }
 
   function down(e: PointerEvent): void {
-    const target = e.target as SVGElement;
+    const target    = e.target as SVGElement;
     const { x, y } = pxFromEvent(svg, e);
 
     if (target.dataset['vertexIdx'] !== undefined) {
@@ -125,12 +158,18 @@ export function createVertexTool(
       return;
     }
 
+    if (target.dataset['ctrlEdge'] !== undefined) {
+      st.mode        = 'dragging-ctrl';
+      st.ctrlEdgeIdx = parseInt(target.dataset['ctrlEdge']!);
+      return;
+    }
+
     if (target.dataset['midpointAfter'] !== undefined) {
-      const afterIdx = parseInt(target.dataset['midpointAfter']!);
-      let shape      = getShapes().find(s => s.id === st.shapeId);
+      const edgeIdx = parseInt(target.dataset['midpointAfter']!);
+      let shape     = getShapes().find(s => s.id === st.shapeId);
       if (!shape) return;
 
-      // Convert rect to closed polygon before inserting a vertex
+      // Convert rect to closed polygon before adding a curve
       if (shape.type === 'rect') {
         const penShape: PenShape = {
           id:     shape.id,
@@ -144,25 +183,29 @@ export function createVertexTool(
         shape = penShape;
       }
 
-      const pts = getShapePoints(shape);
-      const insertAt = (afterIdx + 1) % (pts.length + 1);
-      pts.splice(insertAt, 0, geoFromPx(map, x, y));
-      setShapePoints(shape, pts);
-      st.mode     = 'dragging';
-      st.pointIdx = insertAt;
+      // Set control point at click position and enter drag mode
+      setCtrlPt(shape, edgeIdx, geoFromPx(map, x, y));
+      st.mode        = 'dragging-ctrl';
+      st.ctrlEdgeIdx = edgeIdx;
       renderHandles(shape);
       onRedraw();
     }
   }
 
   function move(e: PointerEvent): void {
-    if (st.mode !== 'dragging' || !st.shapeId) return;
+    if (st.mode === 'idle' || !st.shapeId) return;
     const { x, y } = pxFromEvent(svg, e);
-    const shape    = getShapes().find(s => s.id === st.shapeId);
+    const shape     = getShapes().find(s => s.id === st.shapeId);
     if (!shape) return;
-    const pts = getShapePoints(shape);
-    pts[st.pointIdx] = geoFromPx(map, x, y);
-    setShapePoints(shape, pts);
+
+    if (st.mode === 'dragging') {
+      const pts = getShapePoints(shape);
+      pts[st.pointIdx] = geoFromPx(map, x, y);
+      setShapePoints(shape, pts);
+    } else if (st.mode === 'dragging-ctrl') {
+      setCtrlPt(shape, st.ctrlEdgeIdx, geoFromPx(map, x, y));
+    }
+
     renderHandles(shape);
     onRedraw();
   }
@@ -181,13 +224,23 @@ export function createVertexTool(
   function onContextMenu(e: Event): void {
     e.preventDefault();
     const target = (e as MouseEvent).target as SVGElement;
-    if (target.dataset['vertexIdx'] === undefined) return;
-    const idx   = parseInt(target.dataset['vertexIdx']!);
-    const shape = getShapes().find(s => s.id === st.shapeId);
+    const shape  = getShapes().find(s => s.id === st.shapeId);
     if (!shape) return;
-    const pts    = getShapePoints(shape);
-    const minPts = 2;
-    if (pts.length <= minPts) {
+
+    // Right-click on a control point handle: remove the arc
+    if (target.dataset['ctrlEdge'] !== undefined) {
+      const edgeIdx = parseInt(target.dataset['ctrlEdge']!);
+      setCtrlPt(shape, edgeIdx, null);
+      renderHandles(shape);
+      onSave();
+      onRedraw();
+      return;
+    }
+
+    if (target.dataset['vertexIdx'] === undefined) return;
+    const idx  = parseInt(target.dataset['vertexIdx']!);
+    const pts  = getShapePoints(shape);
+    if (pts.length <= 2) {
       const shapes   = getShapes();
       const shapeIdx = shapes.findIndex(s => s.id === st.shapeId);
       if (shapeIdx >= 0) shapes.splice(shapeIdx, 1);

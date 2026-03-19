@@ -23,9 +23,11 @@ export interface BaseShape {
 }
 
 export interface PenShape extends BaseShape {
-  type:    'pen';
-  points:  GeoPoint[];
-  closed?: boolean; // true = polygon (last point implicitly connects to first)
+  type:       'pen';
+  points:     GeoPoint[];
+  closed?:    boolean; // true = polygon (last point implicitly connects to first)
+  /** Quadratic bezier control point per edge. controlPts[i] curves the edge from points[i] → points[i+1]. */
+  controlPts?: (GeoPoint | null)[];
 }
 
 export interface RectShape extends BaseShape {
@@ -41,10 +43,12 @@ export interface EllipseShape extends BaseShape {
 }
 
 export interface LineShape extends BaseShape {
-  type:    'line';
-  subtype: 'basic' | 'dashed' | 'leader';
-  start:   GeoPoint;
-  end:     GeoPoint;
+  type:       'line';
+  subtype:    'basic' | 'dashed' | 'leader';
+  start:      GeoPoint;
+  end:        GeoPoint;
+  /** Quadratic bezier control point — set by dragging the midpoint handle. */
+  controlPt?: GeoPoint;
 }
 
 export type GeoShape = PenShape | RectShape | EllipseShape | LineShape;
