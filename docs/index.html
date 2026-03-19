@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Panocule — 2D/3D Site Drawing</title>
+  <script type="module" crossorigin src="/assets/index-DaRhkrwm.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BUUpn72k.css">
+</head>
+<body>
+  <div id="map"></div>
+
+  <div id="ui-top">
+    <div id="title">Panocule</div>
+    <div id="status">2D — Satellite + Site Plan</div>
+    <button id="toggle-btn">View in 3D →</button>
+  </div>
+
+  <div id="legend">
+    <div class="row"><div class="swatch-line" style="background:#ffdd00"></div> Site boundary</div>
+    <div class="row"><div class="swatch-box"  style="background:rgba(34,238,136,0.6)"></div> Building footprints</div>
+    <div class="row"><div class="swatch-dot"  style="background:#00d4ff"></div> LiDAR point cloud</div>
+    <div class="row"><div class="swatch-dot"  style="background:#ff6b6b"></div> Drawing overlay</div>
+  </div>
+
+  <div id="mode-badge" class="mode-2d">2D</div>
+
+  <div id="loader">
+    <div class="spinner"></div>
+    <div id="loader-text">Loading point cloud…</div>
+  </div>
+
+  <!-- SVG drawing overlay -->
+  <svg id="draw-overlay" xmlns="http://www.w3.org/2000/svg"></svg>
+
+  <!-- 2D Drawing toolbar -->
+  <div id="draw-toolbar">
+    <button class="tool-btn active" data-tool="none">
+      <span class="tool-icon">✦</span><span class="tool-label">Pan</span>
+    </button>
+    <button class="tool-btn" data-tool="select">
+      <span class="tool-icon">↖</span><span class="tool-label">Select</span>
+    </button>
+    <button class="tool-btn" data-tool="multiselect">
+      <span class="tool-icon">⬚</span><span class="tool-label">Multi-select</span>
+    </button>
+    <hr />
+    <button class="tool-btn" data-tool="rect">
+      <span class="tool-icon">▭</span><span class="tool-label">Rectangle</span>
+    </button>
+    <button class="tool-btn" data-tool="ellipse">
+      <span class="tool-icon">◯</span><span class="tool-label">Ellipse</span>
+    </button>
+    <button class="tool-btn" data-tool="line">
+      <span class="tool-icon">╱</span><span class="tool-label">Line</span>
+    </button>
+    <!-- Line sub-tool strip (shown when line tool is active) -->
+    <div id="line-subtool">
+      <button class="tool-btn active" data-subtool="basic">
+        <span class="tool-icon">—</span><span class="tool-label">Basic</span>
+      </button>
+      <button class="tool-btn" data-subtool="dashed">
+        <span class="tool-icon">╌</span><span class="tool-label">Dashed</span>
+      </button>
+      <button class="tool-btn" data-subtool="leader">
+        <span class="tool-icon">→</span><span class="tool-label">Leader</span>
+      </button>
+    </div>
+    <hr />
+    <button class="tool-btn" data-tool="vertex">
+      <span class="tool-icon">⬡</span><span class="tool-label">Edit vertices</span>
+    </button>
+    <button class="tool-btn" id="shift-btn">
+      <span class="tool-icon">⇧</span><span class="tool-label">Constrain</span>
+    </button>
+    <hr />
+    <button class="tool-btn danger" id="delete-btn">
+      <span class="tool-icon">⌦</span><span class="tool-label">Delete</span>
+    </button>
+    <button class="tool-btn danger" id="clear-btn">
+      <span class="tool-icon">⌫</span><span class="tool-label">Clear all</span>
+    </button>
+  </div>
+
+  <!-- 3D Camera toolbar (hidden until 3D mode) -->
+  <div id="toolbar-3d">
+    <button class="tool-btn active" title="Pan">✦</button>
+    <hr />
+    <span class="toolbar-label" id="bearing-display">N</span>
+    <button class="tool-btn" id="bear-ccw"   title="Rotate CCW 22.5°">◁</button>
+    <button class="tool-btn" id="bear-cw"    title="Rotate CW 22.5°">▷</button>
+    <hr />
+    <span class="toolbar-label" id="pitch-display">65°</span>
+    <button class="tool-btn" id="pitch-up"   title="Steepen tilt">△</button>
+    <button class="tool-btn" id="pitch-down" title="Flatten tilt">▽</button>
+    <hr />
+    <button class="tool-btn" id="north-up"   title="Reset to North">⊕</button>
+  </div>
+
+  <!-- Drawing properties panel -->
+  <div id="draw-props">
+    <label class="prop-row">
+      <span>Stroke</span>
+      <input type="color" id="prop-stroke" value="#ff6b6b" />
+      <input type="range" id="prop-width" min="1" max="20" step="0.5" value="2" />
+    </label>
+    <label class="prop-row">
+      <span>Fill</span>
+      <input type="color" id="prop-fill" value="#ff6b6b" />
+      <input type="range" id="prop-fill-opacity" min="0" max="1" step="0.05" value="0.12" />
+    </label>
+  </div>
+
+</body>
+</html>
