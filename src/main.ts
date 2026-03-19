@@ -31,6 +31,7 @@ const map = new Map({
   zoom: INIT_ZOOM,
   pitch: 0,
   bearing: 0,
+  maxPitch: 85,
   antialias: true,
 });
 
@@ -68,7 +69,7 @@ document.getElementById('delete-btn')?.addEventListener('click', () => {
 
 const BEARING_STEP = 22.5;
 const PITCH_STEP   = 10;
-const PITCH_MAX    = 70;
+const PITCH_MAX    = 85;
 
 document.getElementById('bear-ccw')?.addEventListener('click', () => {
   map.easeTo({ bearing: map.getBearing() - BEARING_STEP, duration: 300 });
