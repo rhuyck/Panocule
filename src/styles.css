@@ -48,22 +48,26 @@ html, body {
 /* ── Drawing toolbar ── */
 #draw-toolbar {
   position: absolute; top: 60px; right: 14px;
-  display: flex; flex-direction: column; gap: 4px;
+  display: flex; flex-direction: column; gap: 3px;
   background: rgba(5,10,20,0.88); border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 8px; padding: 8px 6px; z-index: 20;
+  border-radius: 8px; padding: 8px 8px; z-index: 20;
+  min-width: 148px;
 }
-#draw-toolbar hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 2px 0; }
+#draw-toolbar hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 3px 0; }
 .tool-btn {
-  width: 32px; height: 32px;
+  height: 30px; width: 100%;
   background: transparent; border: 1px solid transparent;
   border-radius: 5px; color: rgba(255,255,255,0.6);
-  font-size: 14px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; justify-content: flex-start;
+  gap: 8px; padding: 0 8px;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
 .tool-btn:hover  { background: rgba(255,255,255,0.08); color: #fff; }
 .tool-btn.active { background: rgba(0,212,255,0.18); border-color: rgba(0,212,255,0.5); color: #00d4ff; }
 .tool-btn.danger:hover { background: rgba(255,80,80,0.18); color: #ff6b6b; }
+.tool-icon { width: 16px; text-align: center; flex-shrink: 0; font-size: 14px; }
+.tool-label { font-size: 10px; letter-spacing: 0.3px; white-space: nowrap; }
 
 /* ── Bottom legend ── */
 #legend {
@@ -112,8 +116,13 @@ html, body {
   flex-direction: column; align-items: center; gap: 4px;
   background: rgba(5,10,20,0.88); border: 1px solid rgba(0,212,255,0.25);
   border-radius: 8px; padding: 8px 6px; z-index: 20;
+  min-width: unset; width: 48px;
 }
 #toolbar-3d hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 2px 0; width: 100%; }
+/* 3D toolbar buttons are icon-only — override the labeled-toolbar width/padding */
+#toolbar-3d .tool-btn {
+  width: 32px; padding: 0; justify-content: center;
+}
 .toolbar-label {
   color: rgba(0,212,255,0.8); font-size: 9px; letter-spacing: 0.5px;
   text-align: center; width: 32px; line-height: 1;

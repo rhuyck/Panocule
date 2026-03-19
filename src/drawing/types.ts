@@ -49,5 +49,5 @@ export interface LineShape extends BaseShape {
 
 export type GeoShape = PenShape | RectShape | EllipseShape | LineShape;
 
-export type ToolName     = 'none' | 'pen' | 'rect' | 'ellipse' | 'line' | 'select' | 'multiselect' | 'vertex';
+export type ToolName     = 'none' | 'rect' | 'ellipse' | 'line' | 'select' | 'multiselect' | 'vertex';
 export type LineSubtool  = 'basic' | 'dashed' | 'leader';

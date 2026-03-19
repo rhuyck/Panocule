@@ -7,36 +7,48 @@ export interface SiteContext {
   /** Initial map center [longitude, latitude] */
   center: [number, number];
   /**
-   * Hard geographic boundary — the map cannot be panned or zoomed outside
-   * this bounding box. Prevents runaway tile usage on shared API keys.
+   * Maximum pannable area — includes the site plus a substantial context buffer.
+   * The map cannot be panned or zoomed outside this boundary.
    * Format: [[sw_lng, sw_lat], [ne_lng, ne_lat]]
    */
   bounds: [[number, number], [number, number]];
-  /** Minimum zoom level (prevents zooming so far out the bounds are useless) */
+  /**
+   * Site focus area — the polygon shown as the yellow site boundary.
+   * Sized to fill ~75% of the viewport at startup (via fitBounds).
+   * Should be meaningfully smaller than bounds so context is visible on pan.
+   */
+  focusBounds: [[number, number], [number, number]];
+  /** Minimum zoom level */
   minZoom: number;
   /** Maximum zoom level */
   maxZoom: number;
 }
 
 /**
- * Default context: Columbus, OH downtown — roughly 10 city blocks (~1.5 km²).
- * Replace center/bounds with property-specific coordinates in a real deployment.
+ * Default context: Columbus, OH downtown demo site.
+ *
+ * focusBounds (~630 m × 490 m) is the site boundary polygon shown in the UI.
+ * bounds (~3.8 km × 2.7 km) is the larger pannable area — pan away from the
+ * site to explore surrounding blocks and streets.
  */
 export const DEFAULT_CONTEXT: SiteContext = {
   name: 'Columbus Downtown — Demo Site',
   center: [-83.0007, 39.9612],
   bounds: [
-    [-83.015, 39.953], // SW — ~1.2 km west, ~0.9 km south of center
-    [-82.986, 39.969], // NE — ~1.3 km east, ~0.9 km north of center
+    [-83.022, 39.948], // SW — ~1.8 km west, ~1.5 km south of center
+    [-82.979, 39.974], // NE — ~1.9 km east, ~1.4 km north of center
   ],
-  minZoom: 14,
+  focusBounds: [
+    [-83.0044, 39.9590], // SW — ~630 m × 490 m site boundary
+    [-82.9970, 39.9634], // NE
+  ],
+  minZoom: 13,
   maxZoom: 21,
 };
 
 /**
  * Applies a SiteContext to a MapLibre Map instance.
- * After this call the map will refuse to pan outside ctx.bounds and
- * will clamp zoom to [ctx.minZoom, ctx.maxZoom].
+ * Sets maxBounds to the full pannable area (ctx.bounds), not the site polygon.
  */
 export function applyContext(map: Map, ctx: SiteContext): void {
   map.setMaxBounds(new LngLatBounds(ctx.bounds[0], ctx.bounds[1]));

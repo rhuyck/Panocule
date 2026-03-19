@@ -134,20 +134,18 @@ export function renderShape(
     }
 
     case 'rect': {
+      // Project all 4 geo corners to current screen pixels and render as a polygon.
+      // Using SVGPolygonElement (not SVGRectElement) means rotation is preserved
+      // correctly: the 4 corners rotate in geo space and are re-projected each frame.
       const pxs = shape.corners.map(g => pxFromGeo(map, g));
-      const xs = pxs.map(p => p.x), ys = pxs.map(p => p.y);
-      const x = Math.min(...xs), y = Math.min(...ys);
-      const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
-      if (w < 1 || h < 1) return;
-      const el = document.createElementNS(NS, 'rect') as SVGRectElement;
-      el.setAttribute('x',            String(x));
-      el.setAttribute('y',            String(y));
-      el.setAttribute('width',        String(w));
-      el.setAttribute('height',       String(h));
-      el.setAttribute('stroke',       s.strokeColor);
-      el.setAttribute('stroke-width', String(s.strokeWidth));
-      el.setAttribute('fill',         s.fillColor);
-      el.setAttribute('fill-opacity', String(s.fillOpacity));
+      const pts = pxs.map(p => `${p.x},${p.y}`).join(' ');
+      const el = document.createElementNS(NS, 'polygon') as SVGPolygonElement;
+      el.setAttribute('points',          pts);
+      el.setAttribute('stroke',          s.strokeColor);
+      el.setAttribute('stroke-width',    String(s.strokeWidth));
+      el.setAttribute('stroke-linejoin', 'round');
+      el.setAttribute('fill',            s.fillColor);
+      el.setAttribute('fill-opacity',    String(s.fillOpacity));
       if (s.strokeDash) el.setAttribute('stroke-dasharray', s.strokeDash);
       el.dataset['shapeId'] = shape.id;
       svg.appendChild(el);
@@ -155,17 +153,21 @@ export function renderShape(
     }
 
     case 'ellipse': {
-      const cp = pxFromGeo(map, shape.center);
-      const ex = pxFromGeo(map, shape.edgeX);
-      const ey = pxFromGeo(map, shape.edgeY);
-      const rx = Math.hypot(ex.x - cp.x, ex.y - cp.y);
-      const ry = Math.hypot(ey.x - cp.x, ey.y - cp.y);
+      const cp   = pxFromGeo(map, shape.center);
+      const exPx = pxFromGeo(map, shape.edgeX);
+      const eyPx = pxFromGeo(map, shape.edgeY);
+      const rx   = Math.hypot(exPx.x - cp.x, exPx.y - cp.y);
+      const ry   = Math.hypot(eyPx.x - cp.x, eyPx.y - cp.y);
       if (rx < 1 || ry < 1) return;
+      // Derive rotation from the screen-space direction to edgeX so the ellipse
+      // follows its geo-rotated orientation correctly.
+      const angleDeg = Math.atan2(exPx.y - cp.y, exPx.x - cp.x) * (180 / Math.PI);
       const el = document.createElementNS(NS, 'ellipse') as SVGEllipseElement;
       el.setAttribute('cx',           String(cp.x));
       el.setAttribute('cy',           String(cp.y));
       el.setAttribute('rx',           String(rx));
       el.setAttribute('ry',           String(ry));
+      el.setAttribute('transform',    `rotate(${angleDeg} ${cp.x} ${cp.y})`);
       el.setAttribute('stroke',       s.strokeColor);
       el.setAttribute('stroke-width', String(s.strokeWidth));
       el.setAttribute('fill',         s.fillColor);

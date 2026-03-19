@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Potree × Maplibre — 2D/3D PoC</title>
+  <title>Panocule — 2D/3D Site Drawing</title>
   <link rel="stylesheet" href="/src/styles.css" />
 </head>
 <body>
   <div id="map"></div>
 
   <div id="ui-top">
-    <div id="title">Potree × Maplibre</div>
+    <div id="title">Panocule</div>
     <div id="status">2D — Satellite + Site Plan</div>
     <button id="toggle-btn">View in 3D →</button>
   </div>
@@ -34,26 +34,51 @@
 
   <!-- 2D Drawing toolbar -->
   <div id="draw-toolbar">
-    <button class="tool-btn active" data-tool="none"        title="Pan">✦</button>
-    <button class="tool-btn"        data-tool="select"      title="Select">↖</button>
-    <button class="tool-btn"        data-tool="multiselect" title="Multi-select">⬚</button>
+    <button class="tool-btn active" data-tool="none">
+      <span class="tool-icon">✦</span><span class="tool-label">Pan</span>
+    </button>
+    <button class="tool-btn" data-tool="select">
+      <span class="tool-icon">↖</span><span class="tool-label">Select</span>
+    </button>
+    <button class="tool-btn" data-tool="multiselect">
+      <span class="tool-icon">⬚</span><span class="tool-label">Multi-select</span>
+    </button>
     <hr />
-    <button class="tool-btn"        data-tool="rect"        title="Rectangle">▭</button>
-    <button class="tool-btn"        data-tool="ellipse"     title="Ellipse">◯</button>
-    <button class="tool-btn"        data-tool="line"        title="Line">╱</button>
+    <button class="tool-btn" data-tool="rect">
+      <span class="tool-icon">▭</span><span class="tool-label">Rectangle</span>
+    </button>
+    <button class="tool-btn" data-tool="ellipse">
+      <span class="tool-icon">◯</span><span class="tool-label">Ellipse</span>
+    </button>
+    <button class="tool-btn" data-tool="line">
+      <span class="tool-icon">╱</span><span class="tool-label">Line</span>
+    </button>
     <!-- Line sub-tool strip (shown when line tool is active) -->
     <div id="line-subtool">
-      <button class="tool-btn active" data-subtool="basic"  title="Basic line">—</button>
-      <button class="tool-btn"        data-subtool="dashed" title="Dashed line">╌</button>
-      <button class="tool-btn"        data-subtool="leader" title="Leader arrow">→</button>
+      <button class="tool-btn active" data-subtool="basic">
+        <span class="tool-icon">—</span><span class="tool-label">Basic</span>
+      </button>
+      <button class="tool-btn" data-subtool="dashed">
+        <span class="tool-icon">╌</span><span class="tool-label">Dashed</span>
+      </button>
+      <button class="tool-btn" data-subtool="leader">
+        <span class="tool-icon">→</span><span class="tool-label">Leader</span>
+      </button>
     </div>
-    <button class="tool-btn"        data-tool="pen"         title="Pen / polygon">✏</button>
     <hr />
-    <button class="tool-btn"        data-tool="vertex"      title="Edit vertices">⬡</button>
-    <button class="tool-btn"        id="shift-btn"          title="Shift — constrain">⇧</button>
+    <button class="tool-btn" data-tool="vertex">
+      <span class="tool-icon">⬡</span><span class="tool-label">Edit vertices</span>
+    </button>
+    <button class="tool-btn" id="shift-btn">
+      <span class="tool-icon">⇧</span><span class="tool-label">Constrain</span>
+    </button>
     <hr />
-    <button class="tool-btn danger" id="delete-btn"         title="Delete selected">⌦</button>
-    <button class="tool-btn danger" id="clear-btn"          title="Clear all">⌫</button>
+    <button class="tool-btn danger" id="delete-btn">
+      <span class="tool-icon">⌦</span><span class="tool-label">Delete</span>
+    </button>
+    <button class="tool-btn danger" id="clear-btn">
+      <span class="tool-icon">⌫</span><span class="tool-label">Clear all</span>
+    </button>
   </div>
 
   <!-- 3D Camera toolbar (hidden until 3D mode) -->

@@ -117,13 +117,14 @@ export function createLineTool(svg: SVGSVGElement, map: Map, getShapes: () => Ge
     shiftActive: boolean,
   ): LineShape | null {
     if (!state) return null;
+    const snappedPt = currentSnapPt; // capture before clearSnap() nulls it
     clearSnap();
 
     let ex: number, ey: number, endGeo: GeoPoint;
-    if (currentSnapPt) {
-      const px = pxFromGeo(map, currentSnapPt);
+    if (snappedPt) {
+      const px = pxFromGeo(map, snappedPt);
       ex = px.x; ey = px.y;
-      endGeo = currentSnapPt;
+      endGeo = snappedPt;
     } else {
       let { x, y } = pxFromEvent(svg, e);
       if (shiftActive) ({ x, y } = snapTo45(state.startX, state.startY, x, y));

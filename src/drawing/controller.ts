@@ -3,7 +3,6 @@ import type { GeoShape, GeoPoint, ShapeStyle, ToolName, LineSubtool, LineShape, 
 import { DEFAULT_STYLE } from './types';
 import { loadShapes, saveShapes, clearShapes, loadActiveStyle, saveActiveStyle } from './store';
 import { NS, initSvgDefs, redrawAll } from './render';
-import { createPenTool }         from './tools/pen';
 import { createRectTool }        from './tools/rect';
 import { createEllipseTool }     from './tools/ellipse';
 import { createLineTool }        from './tools/line';
@@ -108,7 +107,6 @@ export function createDrawingController(svg: SVGSVGElement, map: Map): DrawingCo
 
   // ── Tool instances ────────────────────────────────────────────────────────
 
-  const penTool     = createPenTool(svg, map);
   const rectTool    = createRectTool(svg, map);
   const ellipseTool = createEllipseTool(svg, map);
   const lineTool    = createLineTool(svg, map, () => shapes);
@@ -146,7 +144,6 @@ export function createDrawingController(svg: SVGSVGElement, map: Map): DrawingCo
     e.preventDefault();
     svg.setPointerCapture(e.pointerId);
     switch (activeTool) {
-      case 'pen':         penTool.down(e, activeStyle); break;
       case 'rect':        rectTool.down(e, activeStyle); break;
       case 'ellipse':     ellipseTool.down(e, activeStyle); break;
       case 'line':        lineTool.down(e, activeStyle, lineSubtool); break;
@@ -158,7 +155,6 @@ export function createDrawingController(svg: SVGSVGElement, map: Map): DrawingCo
 
   svg.addEventListener('pointermove', (e: PointerEvent) => {
     switch (activeTool) {
-      case 'pen':         penTool.move(e); break;
       case 'rect':        rectTool.move(e, shiftActive); break;
       case 'ellipse':     ellipseTool.move(e, shiftActive); break;
       case 'line':        lineTool.move(e, shiftActive); break;
@@ -170,7 +166,6 @@ export function createDrawingController(svg: SVGSVGElement, map: Map): DrawingCo
 
   svg.addEventListener('pointerup', (e: PointerEvent) => {
     switch (activeTool) {
-      case 'pen':     commitShape(penTool.up(e, crypto.randomUUID(), activeStyle)); break;
       case 'rect':    commitShape(rectTool.up(e, crypto.randomUUID(), activeStyle, shiftActive)); break;
       case 'ellipse': commitShape(ellipseTool.up(e, crypto.randomUUID(), activeStyle, shiftActive)); break;
       case 'line':    commitShape(lineTool.up(e, crypto.randomUUID(), activeStyle, lineSubtool, shiftActive)); break;
@@ -182,7 +177,6 @@ export function createDrawingController(svg: SVGSVGElement, map: Map): DrawingCo
 
   svg.addEventListener('pointercancel', () => {
     switch (activeTool) {
-      case 'pen':         penTool.cancel(); break;
       case 'rect':        rectTool.cancel(); break;
       case 'ellipse':     ellipseTool.cancel(); break;
       case 'line':        lineTool.cancel(); break;

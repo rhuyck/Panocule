@@ -117,7 +117,9 @@ toggleBtn.addEventListener('click', () => { void transition.toggle(); });
 
 map.on('load', () => {
   applyContext(map, DEFAULT_CONTEXT);
-  map.fitBounds(DEFAULT_CONTEXT.bounds, { padding: 40 });
+  // Fit to the site boundary so it fills ~75% of the viewport; the larger
+  // maxBounds (set by applyContext) lets the user pan out to see context.
+  map.fitBounds(DEFAULT_CONTEXT.focusBounds as [[number,number],[number,number]], { padding: 80 });
 
   const plan = buildSitePlan();
 
